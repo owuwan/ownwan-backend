@@ -1,0 +1,43 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from saju_calculator import calculate_saju
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/')
+def home():
+    return "ALL DAY 사주리포트 서버가 작동 중입니다! 🌟"
+
+@app.route('/api/saju', methods=['POST'])
+def get_saju():
+    data = request.json
+    
+    try:
+        saju_result = calculate_saju(
+            int(data['birth_year']),
+            int(data['birth_month']),
+            int(data['birth_day']),
+            int(data['birth_hour']),
+            data.get('solar_lunar', 'solar')
+        )
+        
+        return jsonify({
+            "status": "ok",
+            "saju": saju_result,
+            "name": data['name'],
+            "gender": data['gender']
+        })
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/test')
+def test():
+    return jsonify({
+        "message": "서버 연결 성공!",
+        "status": "ok"
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
