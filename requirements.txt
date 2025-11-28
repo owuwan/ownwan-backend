@@ -6,3 +6,4 @@ pymongo
 lunarcalendar
 openai
 pyjwt
+requests
