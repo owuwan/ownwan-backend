@@ -718,14 +718,14 @@ def kakao_callback():
         
         # 쿠키 설정 👍
         response.set_cookie(
-            'access_token',
-            token,
-            httponly=True,
-            samesite='Lax',
-            secure=False,
-            path='/',
-            max_age=30*24*60*60  # 30일
-        )
+    'access_token',
+    token,
+    httponly=True,
+    samesite='None',
+    secure=True,
+    path='/',
+    max_age=30*24*60*60
+)
         
         return response
         
@@ -881,14 +881,14 @@ def naver_callback():
         
         # 쿠키 설정 🔥
         response.set_cookie(
-            'access_token',
-            jwt_token,
-            httponly=True,
-            samesite='Lax',
-            secure=False,
-            path='/',
-            max_age=30*24*60*60  # 30일
-        )
+    'access_token',
+    jwt_token,
+    httponly=True,
+    samesite='None',
+    secure=True,
+    path='/',
+    max_age=30*24*60*60
+)
         
         return response
         
@@ -1156,13 +1156,14 @@ def logout():
         
         # access_token 쿠키 삭제
         response.set_cookie(
-            'access_token',
-            '',
-            max_age=0,
-            httponly=True,
-            samesite='Lax',
-            path='/'
-        )
+    'access_token',
+    '',
+    max_age=0,
+    httponly=True,
+    samesite='None',
+    secure=True,
+    path='/'
+)
         
         print('✅ 로그아웃 완료!')
         return response
