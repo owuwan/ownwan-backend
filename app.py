@@ -33,15 +33,18 @@ CORS(app,
      expose_headers=["Set-Cookie"]
 )
 
-# MongoDB 연결
-mongo_client = MongoClient('mongodb://localhost:27017/')
-db = mongo_client['allday_saju']
+# MongoDB 연결 (환경변수 사용)
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client['ownwan']
 
 # Collections
 users_collection = db['users']
 subscriptions_collection = db['subscriptions']
 payments_collection = db['payments']
 results_collection = db['results']
+
+print(f"✅ MongoDB 연결: {MONGO_URI[:30]}...")
 
 # JWT 설정
 JWT_SECRET = "your-secret-key-change-in-production-2025"
