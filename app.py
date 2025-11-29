@@ -904,6 +904,91 @@ def naver_callback():
             'success': False, 
             'message': str(e)
         }), 500
+    # ═══════════════════════════════════════
+# 테스트 로그인 (토스페이먼츠 심사용)
+# ═══════════════════════════════════════
+@app.route('/api/auth/test-login', methods=['POST'])
+def test_login():
+    """토스페이먼츠 심사용 테스트 로그인"""
+    try:
+        print(f"\n" + "="*60)
+        print(f"🧪 테스트 계정 로그인 시도")
+        print("="*60)
+        
+        # 테스트 유저 ID
+        user_id = 'test_toss_reviewer'
+        
+        # DB에서 테스트 유저 확인
+        user = users_collection.find_one({'user_id': user_id})
+        
+        if not user:
+            # 테스트 유저 생성
+            user = {
+                'user_id': user_id,
+                'provider': 'test',
+                'name': '토스 심사용 테스트',
+                'email': 'test@tosspayments.com',
+                'phone': '010-0000-0000',
+                'birth': {
+                    'year': '1990',
+                    'month': '01',
+                    'day': '01',
+                    'hour': '12',
+                    'minute': '00',
+                    'isLunar': False,
+                    'gender': 'male'
+                },
+                'gender': 'male',
+                'created_at': datetime.now(),
+                'updated_at': datetime.now()
+            }
+            users_collection.insert_one(user)
+            print(f"✅ 테스트 유저 생성: {user_id}")
+        else:
+            print(f"✅ 테스트 유저 로그인: {user_id}")
+        
+        # JWT 토큰 생성
+        jwt_token = jwt.encode({
+            'user_id': user_id,
+            'name': '토스 심사용 테스트',
+            'provider': 'test',
+            'exp': datetime.utcnow() + timedelta(days=30)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
+        
+        print(f"✅ JWT 토큰 생성 완료")
+        print("="*60 + "\n")
+        
+        # 응답 생성
+        response = make_response(jsonify({
+            'success': True,
+            'token': jwt_token,
+            'user': {
+                'user_id': user_id,
+                'name': '토스 심사용 테스트',
+                'provider': 'test',
+                'has_birth_info': True
+            }
+        }))
+        
+        # 쿠키 설정
+        response.set_cookie(
+            'access_token',
+            jwt_token,
+            httponly=True,
+            samesite='None',
+            secure=True,
+            path='/',
+            max_age=30*24*60*60
+        )
+        
+        return response
+        
+    except Exception as e:
+        print(f"💥 테스트 로그인 오류: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 
 # ═══════════════════════════════════════
