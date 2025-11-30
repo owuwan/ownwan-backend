@@ -801,6 +801,11 @@ def get_newyear_fortune():
         print(f"일주: {saju_result['day']}")
         print(f"시주: {saju_result['hour']}")
         
+        # 오행 분석 추가
+        from saju_calculator import calculate_element_count
+        element_count = calculate_element_count(saju_result)
+        print(f"🎨 오행 분석: {element_count}")
+        
         # GPT로 신년운세 생성
         gpt_fortune = generate_newyear_fortune_with_gpt(
             name, gender, saju_result, birth_year, birth_month, birth_day
@@ -813,6 +818,7 @@ def get_newyear_fortune():
             "birth_date": f"{birth_year}.{birth_month}.{birth_day}",
             "gender": gender,
             "saju": saju_result,
+            "element_count": element_count,
             "year": 2025,
             "gpt_fortune": gpt_fortune
         }
