@@ -619,6 +619,211 @@ def get_monthly_saju():
         return jsonify({"error": str(e)}), 500
 
 
+
+# ============================================
+# 🆕 신년운세 (2025년) 기능
+# ============================================
+
+def generate_newyear_fortune_with_gpt(name, gender, saju_data, birth_year, birth_month, birth_day):
+    """GPT를 사용하여 2025년 신년운세 생성"""
+    try:
+        print("\n🎊 GPT 2025년 신년운세 생성 시작...")
+        
+        # 프롬프트 작성
+        prompt = f"""당신은 전문 사주 명리학자입니다. 
+아래 사주 정보를 바탕으로 2025년 을사년(乙巳年) 한 해의 신년운세를 작성해주세요.
+
+[사주 정보]
+이름: {name}
+성별: {gender}
+생년월일: {birth_year}년 {birth_month}월 {birth_day}일
+년주: {saju_data['year']}
+월주: {saju_data['month']}
+일주: {saju_data['day']}
+시주: {saju_data['hour']}
+
+[2025년 을사년 특징]
+- 을사년(乙巳年): 푸른 뱀의 해
+- 천간 을(乙): 음목(陰木), 부드러움, 유연함, 성장
+- 지지 사(巳): 뱀, 화기(火氣), 지혜, 변화
+
+다음 항목들을 각각 상세하게 작성해주세요:
+
+1. 2025년 총운 (5-6문장): 을사년과 본인 사주의 관계를 분석하여 한 해 전반적인 운세와 흐름을 설명. 좋은 점과 주의할 점을 균형있게.
+
+2. 월별 운세 요약: 1월부터 12월까지 각 월의 핵심 키워드와 한 줄 운세
+   형식: "1월: [키워드] - 한 줄 운세"
+
+3. 애정운 (4-5문장): 2025년 연애/결혼/인간관계의 흐름과 조언
+
+4. 재물운 (4-5문장): 2025년 재물/투자/소비 관련 전망과 조언
+
+5. 직장/사업운 (4-5문장): 2025년 직장/사업/학업의 전망과 조언
+
+6. 건강운 (3-4문장): 2025년 건강 상태와 주의사항
+
+7. 행운의 방향: 2025년 길한 방향 (예: 동쪽, 남동쪽)
+
+8. 행운의 숫자: 2025년 행운을 부르는 숫자 3개
+
+9. 행운의 컬러: 2025년 행운을 부르는 색상 2개
+
+10. 2025년 대길월(大吉月): 가장 좋은 달 2개와 이유
+
+11. 2025년 주의월: 조심해야 할 달 2개와 이유
+
+12. 2025년 종합 조언 (3-4문장): 을사년을 잘 보내기 위한 핵심 조언
+
+[중요 지시사항]
+- 사주 팔자에 따라 솔직하게 작성 (무조건 긍정 금지)
+- 을사년(푸른 뱀의 해)의 특성과 본인 사주의 상호작용을 분석
+- 구체적이고 실용적인 조언 포함
+- 각 항목은 반드시 "숫자. 제목:" 형식으로 시작
+
+출력 형식:
+1. 2025년 총운: [내용]
+2. 월별 운세 요약:
+1월: [키워드] - [운세]
+2월: [키워드] - [운세]
+...
+12월: [키워드] - [운세]
+3. 애정운: [내용]
+4. 재물운: [내용]
+5. 직장/사업운: [내용]
+6. 건강운: [내용]
+7. 행운의 방향: [내용]
+8. 행운의 숫자: [내용]
+9. 행운의 컬러: [내용]
+10. 2025년 대길월: [내용]
+11. 2025년 주의월: [내용]
+12. 2025년 종합 조언: [내용]"""
+
+        print("   📡 OpenAI API 호출 중...")
+        
+        # GPT API 호출
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "당신은 전문 사주 명리학자입니다. 2025년 을사년의 특성과 개인 사주를 종합 분석하여 신년운세를 작성합니다. 사주에 따라 솔직하게 작성하며, 무조건 긍정적으로 쓰지 않습니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.85,
+            max_tokens=3000
+        )
+        
+        # GPT의 답변 가져오기
+        fortune_text = response.choices[0].message.content
+        
+        print("   ✅ GPT 2025년 신년운세 생성 완료!")
+        print(f"   📝 생성된 운세 길이: {len(fortune_text)}자")
+        print("=" * 50)
+        print(fortune_text[:500] + "...")
+        print("=" * 50)
+        
+        return {
+            "success": True,
+            "fortune": fortune_text
+        }
+        
+    except Exception as e:
+        print(f"   ❌ GPT 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@app.route('/api/newyear-fortune', methods=['POST'])
+def get_newyear_fortune():
+    """2025년 신년운세 API"""
+    try:
+        data = request.json
+        print("\n" + "=" * 50)
+        print("🎊 2025년 신년운세 요청 받음")
+        print("=" * 50)
+        
+        # 입력 데이터
+        name = data.get('name')
+        birth_year = data.get('birthYear')
+        birth_month = data.get('birthMonth')
+        birth_day = data.get('birthDay')
+        birth_hour = data.get('birthHour', 12)
+        gender = data.get('gender')
+        is_lunar = data.get('isLunar', False)
+        
+        # 필수 데이터 검증
+        if not all([name, birth_year, birth_month, birth_day, gender]):
+            missing = []
+            if not name: missing.append('이름')
+            if not birth_year: missing.append('생년')
+            if not birth_month: missing.append('생월')
+            if not birth_day: missing.append('생일')
+            if not gender: missing.append('성별')
+            
+            error_msg = f"필수 정보가 누락되었습니다: {', '.join(missing)}"
+            print(f"❌ {error_msg}")
+            return jsonify({"error": error_msg}), 400
+        
+        # 데이터 타입 변환
+        try:
+            birth_year = int(birth_year)
+            birth_month = int(birth_month)
+            birth_day = int(birth_day)
+        except ValueError as e:
+            return jsonify({"error": f"잘못된 데이터 형식: {str(e)}"}), 400
+        
+        # birth_hour 처리
+        if birth_hour == '알 수 없음' or birth_hour is None:
+            birth_hour = 12
+        elif isinstance(birth_hour, str):
+            try:
+                if '-' in birth_hour:
+                    birth_hour = int(birth_hour.split('-')[0])
+                else:
+                    birth_hour = int(birth_hour)
+            except:
+                birth_hour = 12
+        
+        print(f"이름: {name}")
+        print(f"생년월일: {birth_year}년 {birth_month}월 {birth_day}일")
+        print(f"태어난 시간: {birth_hour}시")
+        print(f"성별: {gender}")
+        
+        # 사주 계산
+        solar_lunar = 'lunar' if is_lunar else 'solar'
+        saju_result = calculate_saju(
+            birth_year, birth_month, birth_day,
+            birth_hour, solar_lunar
+        )
+        
+        print(f"년주: {saju_result['year']}")
+        print(f"월주: {saju_result['month']}")
+        print(f"일주: {saju_result['day']}")
+        print(f"시주: {saju_result['hour']}")
+        
+        # GPT로 신년운세 생성
+        gpt_fortune = generate_newyear_fortune_with_gpt(
+            name, gender, saju_result, birth_year, birth_month, birth_day
+        )
+        
+        # 응답 데이터 구성
+        response_data = {
+            "success": True,
+            "name": name,
+            "birth_date": f"{birth_year}.{birth_month}.{birth_day}",
+            "gender": gender,
+            "saju": saju_result,
+            "year": 2025,
+            "gpt_fortune": gpt_fortune
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"❌ 신년운세 오류: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 @app.route('/test')
 def test():
     return jsonify({
