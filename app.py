@@ -838,6 +838,179 @@ def get_newyear_fortune():
         import traceback
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+    
+    # ═══════════════════════════════════════
+# 평생사주 API
+# ═══════════════════════════════════════
+
+def generate_lifetime_fortune_with_gpt(name, gender, saju_data, birth_year, birth_month, birth_day):
+    """GPT를 사용하여 평생사주 운세 생성"""
+    try:
+        print("\n🌟 GPT 평생사주 생성 시작...")
+        
+        from datetime import datetime
+        current_year = datetime.now().year
+        age = current_year - birth_year + 1
+        
+        prompt = f"""당신은 전문 사주 명리학자입니다. 
+아래 사주 정보를 바탕으로 평생운세를 상세하게 작성해주세요.
+
+[사주 정보]
+이름: {name}
+성별: {gender}
+생년월일: {birth_year}년 {birth_month}월 {birth_day}일
+현재 나이: {age}세
+년주: {saju_data['year']}
+월주: {saju_data['month']}
+일주: {saju_data['day']}
+시주: {saju_data['hour']}
+
+다음 14가지 항목을 각각 상세하게 작성해주세요:
+
+1. 타고난 성격 (5-6문장): 사주팔자가 드러내는 본연의 성격, 기질, 성향을 분석. 장점과 단점을 균형있게.
+
+2. 초년운 (1~30세) (4-5문장): 어린 시절부터 청년기까지의 운세 흐름.
+
+3. 중년운 (31~50세) (4-5문장): 장년기의 운세 흐름. 사회생활, 가정, 재물 축적.
+
+4. 말년운 (51세 이후) (4-5문장): 노년기의 운세 흐름. 건강, 자녀복, 노후.
+
+5. 10년 대운 (6-8문장): 10대부터 60대까지 각 10년 단위의 핵심 운세.
+   형식: "10대: [키워드] - 설명 / 20대: [키워드] - 설명 / ..."
+
+6. 평생 애정운 (5-6문장): 연애, 결혼, 배우자 인연의 특징.
+
+7. 평생 재물운 (5-6문장): 돈복, 재산 형성 시기, 투자 성향.
+
+8. 평생 직업/적성운 (5-6문장): 타고난 적성, 어울리는 직업 분야.
+
+9. 평생 건강운 (4-5문장): 타고난 체질, 주의해야 할 장기/질병.
+
+10. 자녀운 (3-4문장): 자녀와의 인연, 자녀 수.
+
+11. 귀인운 (3-4문장): 도움을 줄 귀인의 특징.
+
+12. 행운 요소: 행운의 방향, 행운의 숫자 3개, 행운의 컬러 2개.
+
+13. 인생 전환점 (4-5문장): 인생에서 중요한 변화가 오는 나이.
+
+14. 평생 종합 조언 (5-6문장): 인생을 잘 살아가기 위한 핵심 조언.
+
+[중요 지시사항]
+- 사주 팔자에 따라 솔직하게 작성 (무조건 긍정 금지)
+- 구체적이고 실용적인 조언 포함
+- 각 항목은 반드시 "숫자. 제목:" 형식으로 시작
+
+출력 형식:
+1. 타고난 성격: [내용]
+2. 초년운: [내용]
+3. 중년운: [내용]
+4. 말년운: [내용]
+5. 10년 대운: [내용]
+6. 평생 애정운: [내용]
+7. 평생 재물운: [내용]
+8. 평생 직업/적성운: [내용]
+9. 평생 건강운: [내용]
+10. 자녀운: [내용]
+11. 귀인운: [내용]
+12. 행운 요소: [내용]
+13. 인생 전환점: [내용]
+14. 평생 종합 조언: [내용]"""
+
+        print("   📡 OpenAI API 호출 중...")
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "당신은 전문 사주 명리학자입니다. 개인의 사주팔자를 분석하여 평생운세를 작성합니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.85,
+            max_tokens=4000
+        )
+        
+        fortune_text = response.choices[0].message.content
+        
+        print("   ✅ GPT 평생사주 생성 완료!")
+        print(f"   📝 생성된 운세 길이: {len(fortune_text)}자")
+        
+        return {
+            "success": True,
+            "fortune": fortune_text
+        }
+        
+    except Exception as e:
+        print(f"   ❌ GPT 오류: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.route('/api/lifetime-fortune', methods=['POST'])
+def get_lifetime_fortune():
+    """평생사주 API"""
+    try:
+        data = request.json
+        print("\n" + "=" * 50)
+        print("🌟 평생사주 요청 받음")
+        print("=" * 50)
+        
+        name = data.get('name')
+        birth_year = data.get('birthYear')
+        birth_month = data.get('birthMonth')
+        birth_day = data.get('birthDay')
+        birth_hour = data.get('birthHour', 12)
+        gender = data.get('gender')
+        is_lunar = data.get('isLunar', False)
+        
+        if not all([name, birth_year, birth_month, birth_day, gender]):
+            missing = []
+            if not name: missing.append('이름')
+            if not birth_year: missing.append('생년')
+            if not birth_month: missing.append('생월')
+            if not birth_day: missing.append('생일')
+            if not gender: missing.append('성별')
+            return jsonify({"error": f"필수 정보 누락: {', '.join(missing)}"}), 400
+        
+        birth_year = int(birth_year)
+        birth_month = int(birth_month)
+        birth_day = int(birth_day)
+        
+        if birth_hour == '알 수 없음' or birth_hour is None:
+            birth_hour = 12
+        elif isinstance(birth_hour, str):
+            try:
+                birth_hour = int(birth_hour.split('-')[0]) if '-' in birth_hour else int(birth_hour)
+            except:
+                birth_hour = 12
+        
+        print(f"이름: {name}, 생년월일: {birth_year}.{birth_month}.{birth_day}, 성별: {gender}")
+        
+        solar_lunar = 'lunar' if is_lunar else 'solar'
+        saju_result = calculate_saju(birth_year, birth_month, birth_day, birth_hour, solar_lunar)
+        
+        from saju_calculator import calculate_element_count
+        element_count = calculate_element_count(saju_result)
+        
+        gpt_fortune = generate_lifetime_fortune_with_gpt(
+            name, gender, saju_result, birth_year, birth_month, birth_day
+        )
+        
+        return jsonify({
+            "success": True,
+            "name": name,
+            "birth_date": f"{birth_year}.{birth_month}.{birth_day}",
+            "gender": gender,
+            "saju": saju_result,
+            "element_count": element_count,
+            "gpt_fortune": gpt_fortune
+        })
+        
+    except Exception as e:
+        print(f"❌ 평생사주 오류: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 @app.route('/test')
 def test():
     return jsonify({
