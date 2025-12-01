@@ -1758,3 +1758,108 @@ def payment_confirm():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+# ═══════════════════════════════════════
+# 관리자 통계 API
+# ═══════════════════════════════════════
+
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    """관리자 대시보드용 통계 API"""
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        kst = pytz.timezone('Asia/Seoul')
+        now = datetime.now(kst)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # 이번 달 시작
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # 7일 전
+        week_ago = now - timedelta(days=7)
+        
+        # === 사용자 통계 ===
+        total_users = users_collection.count_documents({})
+        
+        # 오늘 가입자
+        today_new_users = users_collection.count_documents({
+            'created_at': {'$gte': today_start}
+        })
+        
+        # 이번 달 가입자
+        month_new_users = users_collection.count_documents({
+            'created_at': {'$gte': month_start}
+        })
+        
+        # === 일별 가입자 (최근 7일) ===
+        daily_users = []
+        for i in range(6, -1, -1):
+            day = now - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            
+            count = users_collection.count_documents({
+                'created_at': {'$gte': day_start, '$lt': day_end}
+            })
+            
+            daily_users.append({
+                'date': day.strftime('%m/%d'),
+                'new': count
+            })
+        
+        # === 결제 통계 (payments_collection이 있다면) ===
+        total_revenue = 0
+        today_revenue = 0
+        month_revenue = 0
+        
+        try:
+            # 전체 매출
+            revenue_result = payments_collection.aggregate([
+                {'$match': {'status': 'completed'}},
+                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+            ])
+            for r in revenue_result:
+                total_revenue = r.get('total', 0)
+            
+            # 오늘 매출
+            today_revenue_result = payments_collection.aggregate([
+                {'$match': {'status': 'completed', 'payment_date': {'$gte': today_start}}},
+                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+            ])
+            for r in today_revenue_result:
+                today_revenue = r.get('total', 0)
+                
+            # 이번 달 매출
+            month_revenue_result = payments_collection.aggregate([
+                {'$match': {'status': 'completed', 'payment_date': {'$gte': month_start}}},
+                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+            ])
+            for r in month_revenue_result:
+                month_revenue = r.get('total', 0)
+        except:
+            pass  # payments_collection이 없으면 0으로 유지
+        
+        print(f"📊 관리자 통계 조회 - 총 사용자: {total_users}, 오늘 가입: {today_new_users}")
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'totalUsers': total_users,
+                'todayNewUsers': today_new_users,
+                'monthNewUsers': month_new_users,
+                'totalRevenue': total_revenue,
+                'todayRevenue': today_revenue,
+                'monthRevenue': month_revenue,
+                'dailyUsers': daily_users,
+                'lastUpdated': now.strftime('%Y년 %m월 %d일 %H:%M:%S')
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ 관리자 통계 에러: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
