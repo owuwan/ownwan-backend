@@ -594,6 +594,11 @@ def get_monthly_saju():
         print(f"일주: {saju_result['day']}")
         print(f"시주: {saju_result['hour']}")
         
+        # 오행 분석
+        from saju_calculator import calculate_element_count
+        element_count = calculate_element_count(saju_result)
+        print(f"🎨 오행 분석: {element_count}")
+        
         # GPT로 월간 운세 생성
         gpt_fortune = generate_monthly_fortune_with_gpt(
             name, gender, saju_result, target_year, target_month
@@ -609,7 +614,8 @@ def get_monthly_saju():
             "target_year": target_year,
             "target_month": target_month,
             "saju": saju_result,
-            "gpt_fortune": gpt_fortune
+            "gpt_fortune": gpt_fortune,
+            "element_count": element_count
         }
         
         return jsonify(response_data)
